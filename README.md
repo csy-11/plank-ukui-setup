@@ -1,4 +1,16 @@
-# plank-ukui-setup
+# 麒麟 / UOS 桌面与办公工具集
+# Kylin / UOS desktop & office toolkit
+
+国产 Linux 桌面（统信 UOS、银河麒麟等）上常用的一键脚本合集，全部是**单文件、可 curl 直接运行**的 shell 脚本。
+
+| 工具 | 目录 | 解决什么问题 |
+|---|---|---|
+| **Plank Dock + UKUI 任务栏自动隐藏** | 仓库根目录 `setup-plank-ukui-autohide.sh` | 一行命令装好 Plank Dock，并把 UKUI 任务栏设为自动隐藏 |
+| **WPS 演示文稿错位检测与修复** | [`wps-pptx-repair/`](wps-pptx-repair/) | Windows 做的 PPTX 拷到 UOS/麒麟 用 WPS 打开后文字跑位、溢出色块、行距变大、符号变字母 |
+
+---
+
+# 一、Plank Dock + UKUI 任务栏自动隐藏
 
 一行命令装好 **Plank Dock**，并把 **UKUI 任务栏**（麒麟/银河麒麟等 UKUI 桌面）设成自动隐藏。
 
@@ -57,6 +69,49 @@ bash setup.sh
 如果 `gsettings` 那步失败（不同 UKUI 版本键名不一致），可以手动开：
 
 > 开始菜单 → 控制中心 → 个性化 → 任务栏 → 勾选「自动隐藏任务栏」
+
+---
+
+# 二、WPS 演示文稿错位检测与修复（wps-pptx-repair）
+
+**场景**：Windows 上做的 `.pptx`，拷到统信 UOS / 麒麟上用 **WPS 演示**打开后文字错位——标题下移、正文溢出色块、行距变大、断行奇怪、表格被撑开、✓ → ★ 变成字母/方框。
+
+**原因**：不是文件坏了，而是**字体缺失**（宋体/微软雅黑/Calibri 在 Linux 上通常没有，WPS 换字体后字宽和行高全变）、**行高度量差异**（宋体约 1.2em，思源约 1.44em）、**中英文断行规则**、**PowerPoint 自动缩放残留**、**内边距/单元格边距默认值不同**等。
+
+**工具**：交互式 shell 脚本，单文件自包含，只用系统自带 python3（无需 pip 装任何包，离线可用）。检测并修复 20 类隐患，默认只做安全修复，改完自动备份 + 出报告，可随时回滚。
+
+### 用法
+
+```bash
+# 交互式向导（推荐）
+curl -x http://127.0.0.1:38457 -fsSL \
+  https://raw.githubusercontent.com/csy-11/plank-ukui-setup/main/wps-pptx-repair/wps_pptx_repair.sh \
+  -o /tmp/wps_pptx_repair.sh && chmod +x /tmp/wps_pptx_repair.sh && /tmp/wps_pptx_repair.sh
+
+# 只体检（不改文件）
+curl -x http://127.0.0.1:38457 -fsSL \
+  https://raw.githubusercontent.com/csy-11/plank-ukui-setup/main/wps-pptx-repair/wps_pptx_repair.sh \
+  | bash -s -- /path/to/课件.pptx --scan
+
+# 直接修复
+curl -x http://127.0.0.1:38457 -fsSL \
+  https://raw.githubusercontent.com/csy-11/plank-ukui-setup/main/wps-pptx-repair/wps_pptx_repair.sh \
+  | bash -s -- /path/to/课件.pptx --fix -y
+```
+
+> 交互模式必须**先下载再运行**（`| bash` 会拿不到终端输入）；非交互的 `--scan` / `--fix` 才可以直接管道。
+
+### 能力速览
+
+- **字体**：缺失字体替换（宋体→思源宋体、微软雅黑→思源黑体、Calibri→Carlito…）、中文字体未显式指定 `<a:ea>`、主题字体缺 Hans 映射、符号字体（Wingdings/Webdings）缺失提示、目标字体缺字形；
+- **版式**：文本框内边距缺省、PowerPoint 自动缩放残留（`fontScale`/`lnSpcReduction`）、`spAutoFit` 高度重算、不换行文本框宽度不足、表格单元格边距/行高、中文 lang 标记、行距固定为磅值；
+- **提示**：手动换行、组合非等比缩放、竖排/文字变形、旧版 `.ppt` 二进制格式、非标准页面比例；
+- **三种字体策略**：改写文件内字体名（可独立分发）/ fontconfig 系统别名（不改文件）/ 导入 Windows 字体（最保真）；
+- **安全**：默认不覆盖原文件（输出 `xxx.fixed.pptx`），原文件自动备份，生成 `.report.md` / `.report.json`。
+
+详细说明见 **[wps-pptx-repair/README.md](wps-pptx-repair/README.md)**（成因分析、20 条规则表、三种字体策略、命令行参数、回滚、FAQ）。
+
+---
 
 ## License
 
